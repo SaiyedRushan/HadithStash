@@ -5,34 +5,15 @@ import { router } from 'expo-router'
 export default function LastReadBar() {
   const lastReadItems = [
     {
+      bookId: '1',
+      chapterId: '1',
       hadithId: '1',
       title: 'Hadith 1',
     },
+
     {
-      hadithId: '2',
-      title: 'Hadith 2',
-    },
-    {
-      hadithId: '2',
-      title: 'Hadith 2',
-    },
-    {
-      hadithId: '2',
-      title: 'Hadith 2',
-    },
-    {
-      hadithId: '2',
-      title: 'Hadith 2',
-    },
-    {
-      hadithId: '2',
-      title: 'Hadith 2',
-    },
-    {
-      hadithId: '2',
-      title: 'Hadith 2',
-    },
-    {
+      bookId: '1',
+      chapterId: '2',
       hadithId: '2',
       title: 'Hadith 2',
     },
@@ -42,8 +23,8 @@ export default function LastReadBar() {
       <ThemedText>Last Read:</ThemedText>
       <ScrollView horizontal contentContainerStyle={styles.linkContainer} showsHorizontalScrollIndicator={false}>
         {lastReadItems.map((item) => (
-          <TouchableOpacity key={item.hadithId} style={styles.item} onPress={() => router.push({ pathname: '/hadith/[id]', params: { id: item.hadithId } })}>
-            <Text>{item.title}</Text>
+          <TouchableOpacity key={item.hadithId} style={styles.item} onPress={() => router.push(`/home/book/${item.bookId}/chapter/${item.chapterId}/hadith/${item.hadithId}`)}>
+            <ThemedText>{item.title}</ThemedText>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -66,7 +47,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'white',
+    backgroundColor: '#004643',
     borderRadius: 10,
     padding: 8,
   },

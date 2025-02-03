@@ -35,12 +35,6 @@ export default function RootLayout() {
           <Stack>
             <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
             <Stack.Screen name='+not-found' />
-            {/*  will show chapters in the books */}
-            <Stack.Screen name='book/[id]' options={{ headerShown: false }} />
-            {/* will show hadiths in the chapters */}
-            <Stack.Screen name='book/[id]/chapter/[chapterId]' options={{ headerShown: false }} />
-            {/* will show hadith details */}
-            <Stack.Screen name='hadith/[id]' options={{ headerShown: false }} />
           </Stack>
           <StatusBar style='auto' />
         </ThemeProvider>
