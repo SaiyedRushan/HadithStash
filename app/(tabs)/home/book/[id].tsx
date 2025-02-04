@@ -31,7 +31,10 @@ export default function BookScreen() {
     <ContainerView>
       <ThemedView style={{ gap: 10 }}>
         <ThemedText>
-          Book # {id} - {chapters[0]?.books_metadata.english_title}
+          Book # {id} - {chapters[0]?.books_metadata.english_title}{' '}
+        </ThemedText>
+        <ThemedText>
+          {chapters.length} Chapter{chapters.length > 1 ? 's' : ''}
         </ThemedText>
 
         {chapters.map((chapter) => (
