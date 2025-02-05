@@ -1,12 +1,11 @@
 import { Animated, Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { StyleSheet } from 'react-native'
 import { Tables } from '@/types/supabase'
-import { useGlobalSearchParams, useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams } from 'expo-router'
 import { supabase } from '@/libs/supabase'
 import { useEffect, useRef, useState } from 'react'
 import { ThemedView } from '@/components/ThemedView'
 import HadithCard from '@/components/HadithCard'
-import ContainerView from '@/components/ContainerView'
 import { ThemedText } from '@/components/ThemedText'
 
 type Hadith = Tables<'hadiths'> & { books_metadata: Tables<'books_metadata'>; chapters: Tables<'chapters'> }
@@ -14,10 +13,11 @@ const { height } = Dimensions.get('window')
 const CARD_HEIGHT = height * 0.4 // Adjust this value as needed essentially 70% of the screen height
 
 export default function ChapterScreen() {
-  const { bookId, id } = useLocalSearchParams()
+  const { bookId, id, hadithId } = useLocalSearchParams()
   const [hadiths, setHadiths] = useState<Hadith[]>([])
   const scrollY = useRef(new Animated.Value(0)).current
   const [activeIndex, setActiveIndex] = useState(0)
+  const flatListRef = useRef<Animated.FlatList>(null)
 
   useEffect(() => {
     const fetchHadiths = async () => {
@@ -26,6 +26,21 @@ export default function ChapterScreen() {
         console.error('Error fetching hadiths:', error)
       } else {
         setHadiths(data)
+
+        if (hadithId) {
+          let hadithIndex = data.findIndex((hadith) => hadith.id.toString() === hadithId)
+          if (hadithIndex !== -1) {
+            // Add a small delay to ensure the FlatList has rendered
+            setTimeout(() => {
+              flatListRef.current?.scrollToIndex({
+                index: hadithIndex,
+                animated: true,
+                viewPosition: 0,
+              })
+              setActiveIndex(hadithIndex)
+            }, 500)
+          }
+        }
       }
     }
     fetchHadiths()
@@ -63,6 +78,13 @@ export default function ChapterScreen() {
     },
   })
 
+  // Add getItemLayout to optimize scrollToIndex
+  const getItemLayout = (_: any, index: number) => ({
+    length: CARD_HEIGHT,
+    offset: CARD_HEIGHT * index,
+    index,
+  })
+
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.headerContainer}>
@@ -79,6 +101,7 @@ export default function ChapterScreen() {
 
       {/* TODO: Scroll to the last read hadith. get the max hadith id for user */}
       <Animated.FlatList
+        ref={flatListRef}
         data={hadiths}
         renderItem={renderHadithCard}
         keyExtractor={(item) => item.id.toString()}
@@ -88,6 +111,7 @@ export default function ChapterScreen() {
         decelerationRate='fast'
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
+        getItemLayout={getItemLayout}
       />
     </ThemedView>
   )

@@ -19,9 +19,10 @@ export default function LastReadBar() {
         if (error) console.error('error', error)
         if (data) setLastReadItems((prev) => [...prev, { ...data[0], hadith_id: item.hadithId }])
       }
-      console.log('lastReadItems', lastReadItems)
     }
-    fetchLastReadItemsFromStorage()
+    return () => {
+      fetchLastReadItemsFromStorage()
+    }
   }, [])
 
   return (
@@ -30,7 +31,7 @@ export default function LastReadBar() {
 
       <ScrollView horizontal contentContainerStyle={styles.linkContainer} showsHorizontalScrollIndicator={false}>
         {[...lastReadItems].reverse().map((item) => (
-          <TouchableOpacity key={item.id} style={styles.item} onPress={() => router.push(`/home/book/${item.book_id}/chapter/${item.id}/hadith/${item.hadith_id}`)}>
+          <TouchableOpacity key={item.id} style={styles.item} onPress={() => router.push(`/home/book/${item.book_id}/chapter/${item.id}?hadithId=${item.hadith_id}`)}>
             <ThemedText>
               Book #{item.book_id} - Chapter - {item.english}
             </ThemedText>
