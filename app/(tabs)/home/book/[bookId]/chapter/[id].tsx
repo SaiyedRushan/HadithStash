@@ -77,6 +77,7 @@ export default function ChapterScreen() {
         </ThemedText>
       </ThemedView>
 
+      {/* TODO: Scroll to the last read hadith. get the max hadith id for user */}
       <Animated.FlatList
         data={hadiths}
         renderItem={renderHadithCard}

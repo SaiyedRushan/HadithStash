@@ -9,22 +9,21 @@ import { ThemedView } from '@/components/ThemedView'
 import { ThemedText } from '@/components/ThemedText'
 
 export default function HadithScreen() {
-  const { id } = useLocalSearchParams()
+  const { bookId, chapterId, id } = useLocalSearchParams()
   const [hadith, setHadith] = useState<Tables<'hadiths'> & { chapters: Tables<'chapters'>; books_metadata: Tables<'books_metadata'> }>()
 
   useEffect(() => {
     const fetchHadith = async () => {
       const { data, error } = await supabase.from('hadiths').select('*, chapters(*), books_metadata(*)').eq('id', id)
-      if (error) {
-        console.error(error)
-      } else {
+      if (error) console.error(error)
+      else {
         const fullHadith = `${data[0].english_narrator} ${data[0].english_text}`
         const formattedHadith = fullHadith.replace(/<[^>]*>?/g, '').replace(/\s+/g, ' ')
         setHadith({ ...data[0], english_text: formattedHadith })
       }
     }
     fetchHadith()
-  }, [])
+  }, [id])
 
   return (
     <ContainerView>

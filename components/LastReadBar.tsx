@@ -1,30 +1,39 @@
 import { Text, View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
 import { ThemedText } from './ThemedText'
 import { router } from 'expo-router'
+import { useEffect } from 'react'
+import { useState } from 'react'
+import { supabase } from '@/libs/supabase'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 export default function LastReadBar() {
-  const lastReadItems = [
-    {
-      bookId: '1',
-      chapterId: '1',
-      hadithId: '1',
-      title: 'Hadith 1',
-    },
+  const [lastReadItems, setLastReadItems] = useState<LastReadItem[]>([])
 
-    {
-      bookId: '1',
-      chapterId: '2',
-      hadithId: '2',
-      title: 'Hadith 2',
-    },
-  ]
+  useEffect(() => {
+    const fetchLastReadItemsFromStorage = async () => {
+      setLastReadItems([])
+      const res = await AsyncStorage.getItem('@last_read_bookmark')
+      const parsedRes: LastReadBookmark[] = res ? JSON.parse(res) : []
+      for (const item of parsedRes) {
+        const { data, error } = await supabase.from('chapters').select('*, books_metadata(english_title)').match({ id: item.chapterId, book_id: item.bookId })
+        if (error) console.error('error', error)
+        if (data) setLastReadItems((prev) => [...prev, { ...data[0], hadith_id: item.hadithId }])
+      }
+      console.log('lastReadItems', lastReadItems)
+    }
+    fetchLastReadItemsFromStorage()
+  }, [])
+
   return (
     <View style={styles.container}>
       <ThemedText>Last Read:</ThemedText>
+
       <ScrollView horizontal contentContainerStyle={styles.linkContainer} showsHorizontalScrollIndicator={false}>
-        {lastReadItems.map((item) => (
-          <TouchableOpacity key={item.hadithId} style={styles.item} onPress={() => router.push(`/home/book/${item.bookId}/chapter/${item.chapterId}/hadith/${item.hadithId}`)}>
-            <ThemedText>{item.title}</ThemedText>
+        {[...lastReadItems].reverse().map((item) => (
+          <TouchableOpacity key={item.id} style={styles.item} onPress={() => router.push(`/home/book/${item.book_id}/chapter/${item.id}/hadith/${item.hadith_id}`)}>
+            <ThemedText>
+              Book #{item.book_id} - Chapter - {item.english}
+            </ThemedText>
           </TouchableOpacity>
         ))}
       </ScrollView>

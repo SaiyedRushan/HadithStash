@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { ThemedText } from './ThemedText'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useEffect, useRef, useState } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface HadithCardProps {
   hadith: Tables<'hadiths'>
@@ -15,21 +16,56 @@ export default function HadithCard({ hadith, isActive }: HadithCardProps) {
   const overlayAnim = useRef(new Animated.Value(0)).current
   const checkmarkOpacity = useRef(new Animated.Value(0)).current
   const [cardHeight, setCardHeight] = useState(0)
+  const [isRead, setIsRead] = useState(false)
 
   const handleLayout = (event: LayoutChangeEvent) => {
     setCardHeight(event.nativeEvent.layout.height)
   }
+
   const handlePress = () => {
     router.push(`/home/book/${hadith.book_id}/chapter/${hadith.chapter_id}/hadith/${hadith.id}`)
   }
+
   const hadithText = `${hadith.english_narrator} ${hadith.english_text}`.trim()
   const formattedHadith = hadithText.replace(/<[^>]*>?/g, '').replace(/\s+/g, ' ')
 
   useEffect(() => {
-    if (isActive) {
-      // Calculate animation duration based on text length
+    // TODO UPDATE LOGIC TO STORE AND RETRIEVE HADITH READ STATUS
+    const checkReadStatus = async () => {
+      try {
+        const value = await AsyncStorage.getItem(`@hadith_read_${hadith.id}`)
+        if (value !== null) {
+          setIsRead(true)
+          checkmarkOpacity.setValue(1)
+        }
+      } catch (error) {
+        console.error('Error reading hadith status:', error)
+      }
+    }
+    checkReadStatus()
+  }, [])
+
+  const updateLastReadBookmark = async () => {
+    let res = await AsyncStorage.getItem(`@last_read_bookmark`)
+    let lastReadBookmark: LastReadBookmark[] = res ? JSON.parse(res) : []
+    if (lastReadBookmark.length >= 7) lastReadBookmark.shift()
+    lastReadBookmark.push({
+      bookId: hadith.book_id,
+      chapterId: hadith.chapter_id,
+      hadithId: hadith.id,
+    })
+    await AsyncStorage.setItem(`@last_read_bookmark`, JSON.stringify(lastReadBookmark))
+  }
+
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null)
+
+  useEffect(() => {
+    if (isActive && !isRead) {
+      // if the card is active and the hadith has not been read, start the sequence
       const duration = Math.min(5000, Math.max(2000, formattedHadith.length * 20))
-      Animated.sequence([
+      overlayAnim.setValue(0)
+      checkmarkOpacity.setValue(0)
+      animationRef.current = Animated.sequence([
         Animated.timing(overlayAnim, {
           toValue: 1,
           duration: duration,
@@ -38,16 +74,29 @@ export default function HadithCard({ hadith, isActive }: HadithCardProps) {
         }),
         Animated.timing(checkmarkOpacity, {
           toValue: 1,
-          duration: 300,
+          duration: 500,
           useNativeDriver: true,
         }),
-      ]).start()
-    } else {
-      // Reset animations when card becomes inactive
-      overlayAnim.setValue(0)
-      checkmarkOpacity.setValue(0)
+      ])
+
+      animationRef.current.start(async (result) => {
+        if (result.finished) {
+          setIsRead(true)
+          try {
+            await AsyncStorage.setItem(`@hadith_read_${hadith.id}`, 'true')
+            await updateLastReadBookmark()
+          } catch (error) {
+            console.error('Error saving hadith status:', error)
+          }
+        }
+      })
     }
-  }, [isActive, formattedHadith, overlayAnim, checkmarkOpacity])
+    return () => {
+      // Cleanup: Stop animation if user swipes away
+      if (animationRef.current) animationRef.current.stop()
+    }
+  }, [isActive, isRead, formattedHadith, hadith.id, overlayAnim, checkmarkOpacity])
+
   return (
     <TouchableOpacity style={styles.card} onPress={handlePress} onLayout={handleLayout}>
       <View style={{ gap: 10 }}>
@@ -64,7 +113,7 @@ export default function HadithCard({ hadith, isActive }: HadithCardProps) {
           </Animated.View>
         </View>
       </View>
-      {isActive && (
+      {isActive && !isRead && (
         <Animated.View
           style={[
             styles.overlay,
