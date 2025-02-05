@@ -58,9 +58,10 @@ export default function HadithCard({ hadith, isActive }: HadithCardProps) {
   }
 
   const animationRef = useRef<Animated.CompositeAnimation | null>(null)
+  const [hasRendered, setHasRendered] = useState(false) // to add a small delay to starting the overlay after the page loads
 
   useEffect(() => {
-    if (isActive && !isRead) {
+    if (isActive && !isRead && hasRendered) {
       // if the card is active and the hadith has not been read, start the sequence
       const duration = Math.min(5000, Math.max(2000, formattedHadith.length * 20))
       overlayAnim.setValue(0)
@@ -95,7 +96,14 @@ export default function HadithCard({ hadith, isActive }: HadithCardProps) {
       // Cleanup: Stop animation if user swipes away
       if (animationRef.current) animationRef.current.stop()
     }
-  }, [isActive, isRead, formattedHadith, hadith.id, overlayAnim, checkmarkOpacity])
+  }, [isActive, isRead, formattedHadith, hadith.id, overlayAnim, checkmarkOpacity, hasRendered])
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setHasRendered(true)
+    }, 1000)
+    return () => clearTimeout(timeout)
+  }, [])
 
   return (
     <TouchableOpacity style={styles.card} onPress={handlePress} onLayout={handleLayout}>
@@ -113,7 +121,7 @@ export default function HadithCard({ hadith, isActive }: HadithCardProps) {
           </Animated.View>
         </View>
       </View>
-      {isActive && !isRead && (
+      {isActive && !isRead && hasRendered && (
         <Animated.View
           style={[
             styles.overlay,
